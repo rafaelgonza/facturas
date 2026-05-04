@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Factura generada{% endblock %}
+{% block content %}
+
+<div class="max-w-xl mx-auto bg-white border border-slate-200 rounded-xl p-8 text-center">
+  <div class="text-5xl mb-3">✅</div>
+  <h1 class="text-2xl font-semibold text-slate-900 mb-2">Factura generada</h1>
+  <p class="text-slate-500 mb-1">Nº {{ invoice.invoice_number }}</p>
+  <p class="text-slate-500 mb-1">Fecha: {{ invoice.invoice_date }}</p>
+  <p class="text-slate-500 mb-1">{{ invoice.days }} días · {{ "%.2f"|format(invoice.total) }} €</p>
+  {% if signed %}
+  <p class="text-green-600 mt-3">✓ Firmada digitalmente</p>
+  {% else %}
+  <p class="text-slate-400 mt-3">(Sin firma digital)</p>
+  {% endif %}
+
+  <div class="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+    <a href="/download/{{ invoice.id }}" class="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">
+      ⬇️ Descargar PDF
+    </a>
+    <a href="/new" class="border border-slate-300 text-slate-700 px-6 py-2 rounded hover:bg-slate-50">
+      Generar otra
+    </a>
+    <a href="/" class="text-slate-500 px-6 py-2 hover:text-slate-900">Inicio</a>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Nueva factura{% endblock %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-2xl font-semibold text-slate-900 mb-6">Nueva factura</h1>
+
+  {% if error %}
+  <div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+    {{ error }}
+  </div>
+  {% endif %}
+
+  <form method="post" action="/new" class="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Mes</label>
+        <select name="month" required class="w-full px-3 py-2 border border-slate-300 rounded">
+          {% set months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+          {% for i in range(1, 13) %}
+          <option value="{{ i }}" {% if i == default_month %}selected{% endif %}>{{ "%02d"|format(i) }} - {{ months[i-1] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Año</label>
+        <input type="number" name="year" value="{{ default_year }}" min="2000" max="2099" required
+               class="w-full px-3 py-2 border border-slate-300 rounded">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Días trabajados</label>
+      <input type="number" name="days" value="{{ default_days|default('') }}" min="1" required autofocus
+             class="w-full px-3 py-2 border border-slate-300 rounded">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Contrato</label>
+      <select name="contract_id" required class="w-full px-3 py-2 border border-slate-300 rounded">
+        {% for c in contracts %}
+        <option value="{{ c.id }}"
+          {% if default_contract_id and c.id == default_contract_id %}selected
+          {% elif not default_contract_id and c.id == active_contract_id %}selected
+          {% endif %}>
+          {{ c.name }} — {{ "%.2f"|format(c.daily_rate) }} €/día
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <details class="border border-slate-200 rounded p-3">
+      <summary class="text-sm font-medium text-slate-700 cursor-pointer">Sobrescribir fechas (opcional)</summary>
+      <div class="mt-3 space-y-3">
+        <p class="text-xs text-slate-500">Por defecto: fecha = último día del mes; período = primer al último día.</p>
+        <div>
+          <label class="block text-xs text-slate-600 mb-1">Fecha de la factura</label>
+          <input type="date" name="invoice_date" class="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">Período inicio</label>
+            <input type="date" name="period_start" class="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-600 mb-1">Período fin</label>
+            <input type="date" name="period_end" class="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    {% if cert_loaded %}
+    <div class="border-t border-slate-200 pt-5">
+      <label class="flex items-center gap-2 mb-3">
+        <input type="checkbox" name="sign" value="1" id="sign-checkbox" checked
+               class="w-4 h-4 rounded border-slate-300">
+        <span class="text-sm font-medium text-slate-700">Firmar digitalmente con el certificado</span>
+      </label>
+      <div id="cert-pw-wrap">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña del certificado</label>
+        <input type="password" name="cert_password" id="cert-pw" autocomplete="off"
+               class="w-full px-3 py-2 border border-slate-300 rounded">
+        <p class="text-xs text-slate-500 mt-1">No se guarda en ningún sitio. Se usa solo para esta firma.</p>
+      </div>
+    </div>
+    <script>
+      const cb = document.getElementById('sign-checkbox');
+      const wrap = document.getElementById('cert-pw-wrap');
+      const pw = document.getElementById('cert-pw');
+      function sync(){ wrap.style.display = cb.checked ? '' : 'none'; pw.required = cb.checked; }
+      cb.addEventListener('change', sync); sync();
+    </script>
+    {% else %}
+    <div class="border-t border-slate-200 pt-5 text-sm text-slate-500">
+      No hay certificado cargado. La factura se generará sin firma digital.
+      <a href="/admin?section=cert" class="underline">Subir certificado</a>
+    </div>
+    {% endif %}
+
+    <div class="flex items-center justify-between pt-2">
+      <a href="/" class="text-sm text-slate-500 hover:text-slate-900">← Cancelar</a>
+      <button type="submit" class="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">
+        Generar factura
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

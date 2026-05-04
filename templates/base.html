@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Facturas{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+{% if request.session.get('authenticated') %}
+<nav class="bg-white border-b border-slate-200">
+  <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+    <a href="/" class="font-semibold text-slate-900">📄 Facturas</a>
+    <div class="flex items-center gap-4 text-sm">
+      <a href="/" class="text-slate-600 hover:text-slate-900">Inicio</a>
+      <a href="/new" class="text-slate-600 hover:text-slate-900">Nueva factura</a>
+      <a href="/history" class="text-slate-600 hover:text-slate-900">Histórico</a>
+      <a href="/admin" class="text-slate-600 hover:text-slate-900">Administración</a>
+      <a href="/logout" class="text-slate-400 hover:text-red-600">Salir</a>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<main class="max-w-5xl mx-auto px-6 py-8">
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

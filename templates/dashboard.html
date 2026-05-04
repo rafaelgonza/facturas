@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+
+{% if using_default_pw %}
+<div class="mb-6 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+  ⚠️ Estás usando la contraseña por defecto.
+  <a href="/admin?section=security" class="underline font-medium">Cámbiala ahora</a>.
+</div>
+{% endif %}
+
+<div class="grid md:grid-cols-3 gap-4 mb-8">
+  <a href="/new" class="bg-slate-900 text-white rounded-xl p-6 hover:bg-slate-800 transition">
+    <div class="text-3xl mb-2">➕</div>
+    <div class="text-lg font-semibold">Generar nueva factura</div>
+    <div class="text-slate-300 text-sm mt-1">Mes, días y listo</div>
+  </a>
+  <a href="/history" class="bg-white border border-slate-200 rounded-xl p-6 hover:border-slate-300 transition">
+    <div class="text-3xl mb-2">📚</div>
+    <div class="text-lg font-semibold text-slate-900">Histórico</div>
+    <div class="text-slate-500 text-sm mt-1">Ver y descargar facturas</div>
+  </a>
+  <a href="/admin" class="bg-white border border-slate-200 rounded-xl p-6 hover:border-slate-300 transition">
+    <div class="text-3xl mb-2">⚙️</div>
+    <div class="text-lg font-semibold text-slate-900">Administración</div>
+    <div class="text-slate-500 text-sm mt-1">Datos, contratos, certificado</div>
+  </a>
+</div>
+
+<div class="bg-white rounded-xl border border-slate-200 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-slate-900">Estado</h2>
+  </div>
+  <div class="grid sm:grid-cols-2 gap-4 text-sm">
+    <div class="flex items-center gap-2">
+      <span class="{% if cert_loaded %}text-green-600{% else %}text-slate-400{% endif %}">●</span>
+      <span class="text-slate-700">
+        Certificado de firma:
+        <strong>{% if cert_loaded %}cargado{% else %}no cargado{% endif %}</strong>
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-slate-400">●</span>
+      <span class="text-slate-700">
+        Contrato activo:
+        <strong>
+          {% if settings.active_contract_id %}configurado{% else %}sin configurar{% endif %}
+        </strong>
+      </span>
+    </div>
+  </div>
+</div>
+
+{% if recent %}
+<div class="bg-white rounded-xl border border-slate-200 p-6 mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-slate-900">Facturas recientes</h2>
+    <a href="/history" class="text-sm text-slate-500 hover:text-slate-900">Ver todas →</a>
+  </div>
+  <div class="divide-y divide-slate-100">
+    {% for inv in recent %}
+    <div class="flex items-center justify-between py-3">
+      <div>
+        <div class="font-medium text-slate-900">{{ inv.invoice_number }}</div>
+        <div class="text-sm text-slate-500">
+          {{ inv.invoice_date }} · {{ inv.days }} días · {{ "%.2f"|format(inv.total) }} €
+          {% if inv.signed %}<span class="ml-2 text-green-600">✓ firmada</span>{% endif %}
+        </div>
+      </div>
+      <a href="/download/{{ inv.id }}" class="text-sm text-slate-600 hover:text-slate-900 underline">Descargar</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Histórico{% endblock %}
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold text-slate-900">Histórico de facturas</h1>
+  <a href="/new" class="bg-slate-900 text-white px-4 py-2 rounded text-sm hover:bg-slate-800">+ Nueva</a>
+</div>
+
+{% if not invoices %}
+<div class="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
+  Aún no hay facturas. <a href="/new" class="text-slate-900 underline">Crea la primera</a>.
+</div>
+{% else %}
+
+<div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-slate-600 text-left">
+      <tr>
+        <th class="px-4 py-3 font-medium">Nº Factura</th>
+        <th class="px-4 py-3 font-medium">Fecha</th>
+        <th class="px-4 py-3 font-medium">Período</th>
+        <th class="px-4 py-3 font-medium text-right">Días</th>
+        <th class="px-4 py-3 font-medium text-right">Total</th>
+        <th class="px-4 py-3 font-medium">Estado</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for inv in invoices %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-4 py-3 font-mono text-slate-900">{{ inv.invoice_number }}</td>
+        <td class="px-4 py-3 text-slate-700">{{ inv.invoice_date }}</td>
+        <td class="px-4 py-3 text-slate-500 text-xs">{{ inv.period_start }} → {{ inv.period_end }}</td>
+        <td class="px-4 py-3 text-right text-slate-700">{{ inv.days }}</td>
+        <td class="px-4 py-3 text-right font-medium text-slate-900">{{ "%.2f"|format(inv.total) }} €</td>
+        <td class="px-4 py-3">
+          {% if inv.signed %}
+            <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-1 rounded">✓ firmada</span>
+          {% else %}
+            <span class="inline-flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">sin firma</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="/download/{{ inv.id }}" class="text-slate-700 hover:text-slate-900 mr-3">Descargar</a>
+          <form method="post" action="/delete/{{ inv.id }}" class="inline" onsubmit="return confirm('¿Eliminar esta factura? El PDF se borrará del disco.')">
+            <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endif %}
+
+{% endblock %}

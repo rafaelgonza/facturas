@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invoice {{ invoice_number }}</title>
+<style>
+@page {
+    size: letter;
+    margin: 0.55in 0.55in 0.55in 0.55in;
+}
+* { box-sizing: border-box; }
+body {
+    font-family: 'Liberation Sans', 'Calibri', 'Arial', sans-serif;
+    font-size: 9.5pt;
+    color: #333;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* --- HEADER --- */
+.header { width: 100%; }
+.header-table { width: 100%; border-collapse: collapse; }
+.header-table td { vertical-align: top; padding: 0; }
+.issuer .name { font-weight: bold; font-size: 11pt; color: #333; }
+.issuer div { line-height: 1.45; }
+.invoice-meta { text-align: right; }
+.invoice-meta .row { font-size: 13pt; font-weight: bold; color: #2c2c2c; margin-bottom: 4pt; }
+.invoice-meta .label { color: #2c2c2c; }
+.invoice-meta .value { color: #2c2c2c; }
+
+/* --- BILL TO / DETAILS --- */
+.bill-section { width: 100%; margin-top: 18pt; border-collapse: collapse; }
+.bill-section td { vertical-align: top; width: 50%; padding-right: 12pt; }
+.col-header {
+    font-size: 9.5pt;
+    color: #6f6f6f;
+    letter-spacing: 0.5pt;
+    padding-bottom: 4pt;
+    border-bottom: 0.8pt solid #f4cccc;
+    margin-bottom: 6pt;
+}
+.bill-section .body div { line-height: 1.45; }
+
+/* --- SERVICES TABLE --- */
+.services { width: 100%; border-collapse: collapse; margin-top: 18pt; }
+.services th {
+    font-size: 9.5pt;
+    color: #6f6f6f;
+    letter-spacing: 0.4pt;
+    text-align: left;
+    padding-bottom: 4pt;
+    border-bottom: 0.8pt solid #f4cccc;
+    font-weight: normal;
+}
+.services th.center { text-align: center; }
+.services th.right  { text-align: right; }
+.services td { vertical-align: top; padding-top: 8pt; }
+.services td.center { text-align: center; }
+.services td.right  { text-align: right; }
+.services .desc { width: 60%; }
+.services .col-days  { width: 12%; }
+.services .col-rate  { width: 13%; }
+.services .col-total { width: 15%; }
+
+.services ul { margin: 0; padding-left: 16pt; }
+.services li { margin-bottom: 1.5pt; }
+
+/* --- BOTTOM TWO-COLUMN --- */
+.bottom { width: 100%; margin-top: 16pt; border-collapse: collapse; }
+.bottom > tbody > tr > td { vertical-align: top; padding: 0; }
+.bottom .left  { width: 55%; padding-right: 16pt; }
+.bottom .right { width: 45%; }
+
+.comments { font-weight: bold; }
+.payment-title { font-weight: bold; margin-top: 10pt; }
+.payment p { margin: 2pt 0; line-height: 1.45; }
+
+/* --- TOTALS --- */
+.totals { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
+.totals td { padding: 4pt 0; }
+.totals td.label { color: #6f6f6f; font-size: 9.5pt; border-bottom: 0.8pt solid #f4cccc; }
+.totals td.value { text-align: right; border-bottom: 0.8pt solid #f4cccc; }
+.totals tr.total td.label,
+.totals tr.total td.value {
+    font-weight: bold;
+    font-size: 11pt;
+    color: #222;
+    border-top: 1.4pt solid #c97a73;
+    border-bottom: 1.4pt solid #c97a73;
+    padding: 6pt 0;
+}
+
+.vat-note { font-size: 9pt; line-height: 1.45; color: #444; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<table class="header-table">
+  <tr>
+    <td class="issuer" style="width: 60%;">
+      <div class="name">{{ issuer.name }}</div>
+      <div>{{ issuer.address_line1 }}</div>
+      <div>{{ issuer.address_line2 }}</div>
+      <div>Tel. {{ issuer.phone }} Email: {{ issuer.email }}</div>
+      <div>VAT: {{ issuer.vat }}</div>
+    </td>
+    <td class="invoice-meta" style="width: 40%;">
+      <div class="row"><span class="label">INVOICE NO.</span>&nbsp;&nbsp;<span class="value">{{ invoice_number }}</span></div>
+      <div class="row"><span class="label">DATE.</span>&nbsp;&nbsp;<span class="value">{{ invoice_date }}</span></div>
+    </td>
+  </tr>
+</table>
+
+<!-- BILL TO / DETAILS -->
+<table class="bill-section">
+  <tr>
+    <td><div class="col-header">BILL TO</div></td>
+    <td><div class="col-header">DETAILS</div></td>
+  </tr>
+  <tr>
+    <td class="body">
+      <div>{{ client.name }}</div>
+      <div>{{ client.address_line1 }}</div>
+      <div>{{ client.address_line2 }}</div>
+      <div>{{ client.vat }}</div>
+    </td>
+    <td class="body">
+      <div>{{ contract.name }}</div>
+      <div>Period of work {{ period_start }} to {{ period_end }}</div>
+    </td>
+  </tr>
+</table>
+
+<!-- SERVICES TABLE -->
+<table class="services">
+  <thead>
+    <tr>
+      <th class="desc">DESCRIPTION OF SERVICES</th>
+      <th class="col-days center">DAYS</th>
+      <th class="col-rate right">DAILY RATE</th>
+      <th class="col-total right">TOTAL</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="desc">
+        <ul>
+          {% for line in services_lines %}<li>{{ line }}</li>{% endfor %}
+        </ul>
+      </td>
+      <td class="col-days center">{{ days }}</td>
+      <td class="col-rate right">{{ daily_rate_str }} €</td>
+      <td class="col-total right">{{ total_str }} €</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- BOTTOM TWO COLUMNS -->
+<table class="bottom">
+  <tr>
+    <td class="left">
+      <div class="comments">Comments:</div>
+      <div class="payment-title">PAYMENT INFORMATION:</div>
+      <div class="payment">
+        <p>Please make payment to the following account:</p>
+        <p>Bank: {{ bank.name }}</p>
+        <p>IBAN: {{ bank.iban }}</p>
+        <p>Swift code / BIC code: {{ bank.swift }}</p>
+        <p>Name account holder: {{ bank.holder }}</p>
+      </div>
+    </td>
+    <td class="right">
+      <table class="totals">
+        <tr>
+          <td class="label">SUB TOTAL</td>
+          <td class="value">{{ total_str }} €</td>
+        </tr>
+        <tr>
+          <td class="label">VAT ({{ vat_percentage_str }}%)</td>
+          <td class="value">{{ vat_amount_str }} €</td>
+        </tr>
+        <tr class="total">
+          <td class="label">TOTAL</td>
+          <td class="value">{{ grand_total_str }} €</td>
+        </tr>
+      </table>
+      <div class="vat-note">{{ vat_note }}</div>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

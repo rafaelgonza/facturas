@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Administración{% endblock %}
+{% block content %}
+
+{% macro field(label, name, value) %}
+<div>
+  <label class="block text-sm font-medium text-slate-700 mb-1">{{ label }}</label>
+  <input type="text" name="{{ name }}" value="{{ value }}" required
+         class="w-full px-3 py-2 border border-slate-300 rounded">
+</div>
+{% endmacro %}
+
+<h1 class="text-2xl font-semibold text-slate-900 mb-6">Administración</h1>
+
+{% if msg %}
+<div class="mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">{{ msg }}</div>
+{% endif %}
+{% if err %}
+<div class="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{{ err }}</div>
+{% endif %}
+
+<div class="grid md:grid-cols-[200px_1fr] gap-6">
+  <!-- Sidebar -->
+  <aside>
+    <nav class="space-y-1 text-sm">
+      {% set sections = [
+        ('issuer', 'Datos del emisor'),
+        ('client', 'Datos del cliente'),
+        ('bank', 'Datos bancarios'),
+        ('contracts', 'Contratos'),
+        ('general', 'General'),
+        ('cert', 'Certificado'),
+        ('security', 'Seguridad'),
+      ] %}
+      {% for key, label in sections %}
+      <a href="/admin?section={{ key }}"
+         class="block px-3 py-2 rounded
+                {% if section == key %}bg-slate-900 text-white{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </nav>
+  </aside>
+
+  <!-- Content -->
+  <div class="bg-white border border-slate-200 rounded-xl p-6">
+
+    {% if section == 'issuer' %}
+    <h2 class="text-lg font-semibold mb-4">Datos del emisor</h2>
+    <form method="post" action="/admin/issuer" class="space-y-4">
+      {{ field('Nombre / Razón social', 'issuer_name', settings.issuer_name) }}
+      {{ field('Dirección (línea 1)', 'issuer_address_line1', settings.issuer_address_line1) }}
+      {{ field('Dirección (línea 2)', 'issuer_address_line2', settings.issuer_address_line2) }}
+      {{ field('Teléfono', 'issuer_phone', settings.issuer_phone) }}
+      {{ field('Email', 'issuer_email', settings.issuer_email) }}
+      {{ field('NIF / VAT', 'issuer_vat', settings.issuer_vat) }}
+      {{ field('Iniciales (para nº factura, ej. RGM)', 'issuer_initials', settings.issuer_initials) }}
+      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Guardar</button>
+    </form>
+
+    {% elif section == 'client' %}
+    <h2 class="text-lg font-semibold mb-4">Datos del cliente</h2>
+    <form method="post" action="/admin/client" class="space-y-4">
+      {{ field('Nombre / Razón social', 'client_name', settings.client_name) }}
+      {{ field('Dirección (línea 1)', 'client_address_line1', settings.client_address_line1) }}
+      {{ field('Dirección (línea 2)', 'client_address_line2', settings.client_address_line2) }}
+      {{ field('VAT / TVA', 'client_vat', settings.client_vat) }}
+      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Guardar</button>
+    </form>
+
+    {% elif section == 'bank' %}
+    <h2 class="text-lg font-semibold mb-4">Datos bancarios</h2>
+    <form method="post" action="/admin/bank" class="space-y-4">
+      {{ field('Banco', 'bank_name', settings.bank_name) }}
+      {{ field('IBAN', 'bank_iban', settings.bank_iban) }}
+      {{ field('Swift / BIC', 'bank_swift', settings.bank_swift) }}
+      {{ field('Titular de la cuenta', 'bank_holder', settings.bank_holder) }}
+      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Guardar</button>
+    </form>
+
+    {% elif section == 'contracts' %}
+    <h2 class="text-lg font-semibold mb-4">Contratos</h2>
+
+    <p class="text-sm text-slate-500 mb-4">
+      Gestiona aquí los contratos. El "activo" es el que se selecciona por defecto al crear una factura.
+    </p>
+
+    <div class="space-y-4 mb-8">
+      {% for c in contracts %}
+      <div class="border border-slate-200 rounded-lg p-4 {% if settings.active_contract_id == c.id %}ring-2 ring-slate-900{% endif %} {% if c.is_archived %}opacity-50{% endif %}">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="font-medium text-slate-900">{{ c.name }}</div>
+            <div class="text-sm text-slate-500">{{ "%.2f"|format(c.daily_rate) }} €/día
+              {% if settings.active_contract_id == c.id %} · <span class="text-slate-900 font-medium">activo</span>{% endif %}
+              {% if c.is_archived %} · archivado{% endif %}
+            </div>
+          </div>
+          <div class="flex gap-2">
+            {% if not c.is_archived and settings.active_contract_id != c.id %}
+            <form method="post" action="/admin/contracts/{{ c.id }}/activate">
+              <button class="text-xs px-3 py-1 border border-slate-300 rounded hover:bg-slate-50">Activar</button>
+            </form>
+            {% endif %}
+            {% if not c.is_archived %}
+            <form method="post" action="/admin/contracts/{{ c.id }}/archive" onsubmit="return confirm('¿Archivar contrato?')">
+              <button class="text-xs px-3 py-1 border border-slate-300 rounded text-slate-500 hover:bg-slate-50">Archivar</button>
+            </form>
+            {% else %}
+            <form method="post" action="/admin/contracts/{{ c.id }}/unarchive">
+              <button class="text-xs px-3 py-1 border border-slate-300 rounded hover:bg-slate-50">Restaurar</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        <details>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-700">Editar</summary>
+          <form method="post" action="/admin/contracts/{{ c.id }}/update" class="mt-3 space-y-3">
+            {{ field('Nombre', 'name', c.name) }}
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Tarifa diaria (€)</label>
+              <input type="number" step="0.01" name="daily_rate" value="{{ c.daily_rate }}" required
+                     class="w-full px-3 py-2 border border-slate-300 rounded">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Descripción de servicios (una línea por viñeta)</label>
+              <textarea name="services_description" rows="10" required
+                        class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-xs">{{ c.services_description }}</textarea>
+            </div>
+            <button class="bg-slate-900 text-white px-4 py-1.5 rounded text-sm hover:bg-slate-800">Guardar cambios</button>
+          </form>
+        </details>
+      </div>
+      {% endfor %}
+    </div>
+
+    <details class="border border-slate-200 rounded-lg p-4">
+      <summary class="font-medium text-slate-900 cursor-pointer">+ Nuevo contrato</summary>
+      <form method="post" action="/admin/contracts/new" class="mt-4 space-y-3">
+        {{ field('Nombre (ej. "Contract DI/07941 - SC 029679")', 'name', '') }}
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Tarifa diaria (€)</label>
+          <input type="number" step="0.01" name="daily_rate" required
+                 class="w-full px-3 py-2 border border-slate-300 rounded">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Descripción de servicios (una línea por viñeta)</label>
+          <textarea name="services_description" rows="10" required
+                    class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-xs"></textarea>
+        </div>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="set_active" value="1" class="w-4 h-4 rounded border-slate-300">
+          <span class="text-sm text-slate-700">Activarlo automáticamente</span>
+        </label>
+        <button class="bg-slate-900 text-white px-4 py-2 rounded text-sm hover:bg-slate-800">Crear contrato</button>
+      </form>
+    </details>
+
+    {% elif section == 'general' %}
+    <h2 class="text-lg font-semibold mb-4">Configuración general</h2>
+    <form method="post" action="/admin/general" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">% IVA por defecto</label>
+        <input type="number" step="0.01" name="vat_percentage" value="{{ settings.vat_percentage }}" required
+               class="w-full px-3 py-2 border border-slate-300 rounded">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nota IVA (texto que aparece bajo el total)</label>
+        <textarea name="vat_note" rows="4" required
+                  class="w-full px-3 py-2 border border-slate-300 rounded text-sm">{{ settings.vat_note }}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Patrón nombre archivo (1ª factura del mes)</label>
+        <input type="text" name="filename_pattern_first" value="{{ settings.filename_pattern_first }}" required
+               class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-sm">
+        <p class="text-xs text-slate-500 mt-1">
+          Variables: <code>{month:02d}</code>, <code>{year:04d}</code>, <code>{year_short:02d}</code>, <code>{seq}</code>, <code>{initials}</code>
+        </p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Patrón nombre archivo (factura adicional)</label>
+        <input type="text" name="filename_pattern_extra" value="{{ settings.filename_pattern_extra }}" required
+               class="w-full px-3 py-2 border border-slate-300 rounded font-mono text-sm">
+        <p class="text-xs text-slate-500 mt-1">Se usa para la 2ª factura del mes en adelante.</p>
+      </div>
+      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Guardar</button>
+    </form>
+
+    {% elif section == 'cert' %}
+    <h2 class="text-lg font-semibold mb-4">Certificado de firma digital</h2>
+
+    {% if cert_loaded %}
+    <div class="mb-4 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
+      ✓ Certificado cargado: <strong>{{ settings.cert_filename }}</strong>
+      {% if settings.cert_uploaded_at %}<br><span class="text-xs">Subido: {{ settings.cert_uploaded_at.strftime('%d/%m/%Y %H:%M') }}</span>{% endif %}
+    </div>
+    <form method="post" action="/admin/cert/delete" class="mb-6"
+          onsubmit="return confirm('¿Eliminar el certificado? Las próximas facturas no se firmarán hasta subir uno nuevo.')">
+      <button class="text-sm text-red-600 hover:text-red-700 underline">Eliminar certificado</button>
+    </form>
+    {% endif %}
+
+    <p class="text-sm text-slate-600 mb-4">
+      Sube tu certificado en formato <code>.p12</code> o <code>.pfx</code>. Se cifra en el disco con la
+      <code>SECRET_KEY</code> de la aplicación. La contraseña del certificado <strong>no se guarda</strong>:
+      la introduces tú al firmar cada factura.
+    </p>
+    <form method="post" action="/admin/cert" enctype="multipart/form-data" class="space-y-4">
+      <input type="file" name="cert_file" accept=".p12,.pfx" required
+             class="block w-full text-sm text-slate-700
+                    file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                    file:text-sm file:font-medium file:bg-slate-900 file:text-white
+                    hover:file:bg-slate-800">
+      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">
+        {% if cert_loaded %}Reemplazar certificado{% else %}Subir certificado{% endif %}
+      </button>
+    </form>
+
+    {% elif section == 'security' %}
+    <h2 class="text-lg font-semibold mb-4">Cambiar contraseña</h2>
+    <form method="post" action="/admin/password" class="space-y-4 max-w-sm">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña actual</label>
+        <input type="password" name="current_password" required
+               class="w-full px-3 py-2 border border-slate-300 rounded">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nueva contraseña</label>
+        <input type="password" name="new_password" required minlength="8"
+               class="w-full px-3 py-2 border border-slate-300 rounded">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Repite nueva contraseña</label>
+        <input type="password" name="new_password_repeat" required minlength="8"
+               class="w-full px-3 py-2 border border-slate-300 rounded">
+      </div>
+      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Cambiar contraseña</button>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}
