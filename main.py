@@ -83,19 +83,28 @@ def login_submit(
     settings = get_settings(db)
     if verify_password(password, settings.password_hash):
         request.session["authenticated"] = True
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse("/facturas", status_code=303)
     return RedirectResponse("/login?error=1", status_code=303)
 
 
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("/login", status_code=303)
+    return RedirectResponse("/", status_code=303)
+
+
+# ---------- LANDING ----------
+
+@app.get("/", response_class=HTMLResponse)
+def landing(request: Request):
+    if is_authenticated(request):
+        return RedirectResponse("/facturas", status_code=303)
+    return templates.TemplateResponse("landing.html", {"request": request})
 
 
 # ---------- DASHBOARD ----------
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/facturas", response_class=HTMLResponse)
 def dashboard(
     request: Request,
     _: bool = Depends(require_auth),
