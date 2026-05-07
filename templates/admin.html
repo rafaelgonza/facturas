@@ -25,7 +25,7 @@
     <nav class="space-y-1 text-sm">
       {% set sections = [
         ('issuer', 'Datos del emisor'),
-        ('client', 'Datos del cliente'),
+        ('clients', 'Clientes'),
         ('bank', 'Datos bancarios'),
         ('contracts', 'Contratos'),
         ('general', 'General'),
@@ -58,15 +58,73 @@
       <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Guardar</button>
     </form>
 
-    {% elif section == 'client' %}
-    <h2 class="text-lg font-semibold mb-4">Datos del cliente</h2>
-    <form method="post" action="/admin/client" class="space-y-4">
-      {{ field('Nombre / Razón social', 'client_name', settings.client_name) }}
-      {{ field('Dirección (línea 1)', 'client_address_line1', settings.client_address_line1) }}
-      {{ field('Dirección (línea 2)', 'client_address_line2', settings.client_address_line2) }}
-      {{ field('VAT / TVA', 'client_vat', settings.client_vat) }}
-      <button class="bg-slate-900 text-white px-5 py-2 rounded hover:bg-slate-800">Guardar</button>
-    </form>
+    {% elif section == 'clients' %}
+    <h2 class="text-lg font-semibold mb-4">Clientes</h2>
+
+    <p class="text-sm text-slate-500 mb-4">
+      El cliente "activo" se selecciona por defecto al crear una factura. Puedes cambiarlo en cada factura.
+    </p>
+
+    <div class="space-y-4 mb-8">
+      {% for c in clients %}
+      <div class="border border-slate-200 rounded-lg p-4 {% if settings.active_client_id == c.id %}ring-2 ring-slate-900{% endif %} {% if c.is_archived %}opacity-50{% endif %}">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="font-medium text-slate-900">{{ c.name }}</div>
+            <div class="text-sm text-slate-500">
+              {{ c.vat or '—' }}
+              {% if settings.active_client_id == c.id %} · <span class="text-slate-900 font-medium">activo</span>{% endif %}
+              {% if c.is_archived %} · archivado{% endif %}
+            </div>
+          </div>
+          <div class="flex gap-2">
+            {% if not c.is_archived and settings.active_client_id != c.id %}
+            <form method="post" action="/admin/clients/{{ c.id }}/activate">
+              <button class="text-xs px-3 py-1 border border-slate-300 rounded hover:bg-slate-50">Activar</button>
+            </form>
+            {% endif %}
+            {% if not c.is_archived %}
+            <form method="post" action="/admin/clients/{{ c.id }}/archive" onsubmit="return confirm('¿Archivar cliente?')">
+              <button class="text-xs px-3 py-1 border border-slate-300 rounded text-slate-500 hover:bg-slate-50">Archivar</button>
+            </form>
+            {% else %}
+            <form method="post" action="/admin/clients/{{ c.id }}/unarchive">
+              <button class="text-xs px-3 py-1 border border-slate-300 rounded hover:bg-slate-50">Restaurar</button>
+            </form>
+            {% endif %}
+            <form method="post" action="/admin/clients/{{ c.id }}/delete" onsubmit="return confirm('¿Eliminar cliente? Solo es posible si no tiene facturas asociadas.')">
+              <button class="text-xs px-3 py-1 border border-red-200 rounded text-red-500 hover:bg-red-50">Eliminar</button>
+            </form>
+          </div>
+        </div>
+        <details>
+          <summary class="text-xs text-slate-500 cursor-pointer hover:text-slate-700">Editar</summary>
+          <form method="post" action="/admin/clients/{{ c.id }}/update" class="mt-3 space-y-3">
+            {{ field('Nombre / Razón social', 'name', c.name) }}
+            {{ field('Dirección (línea 1)', 'address_line1', c.address_line1) }}
+            {{ field('Dirección (línea 2)', 'address_line2', c.address_line2) }}
+            {{ field('VAT / TVA / CIF', 'vat', c.vat) }}
+            <button class="bg-slate-900 text-white px-4 py-1.5 rounded text-sm hover:bg-slate-800">Guardar cambios</button>
+          </form>
+        </details>
+      </div>
+      {% endfor %}
+    </div>
+
+    <details class="border border-slate-200 rounded-lg p-4">
+      <summary class="font-medium text-slate-900 cursor-pointer">+ Nuevo cliente</summary>
+      <form method="post" action="/admin/clients/new" class="mt-4 space-y-3">
+        {{ field('Nombre / Razón social', 'name', '') }}
+        {{ field('Dirección (línea 1)', 'address_line1', '') }}
+        {{ field('Dirección (línea 2)', 'address_line2', '') }}
+        {{ field('VAT / TVA / CIF', 'vat', '') }}
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="set_active" value="1" class="w-4 h-4 rounded border-slate-300">
+          <span class="text-sm text-slate-700">Activarlo automáticamente</span>
+        </label>
+        <button class="bg-slate-900 text-white px-4 py-2 rounded text-sm hover:bg-slate-800">Crear cliente</button>
+      </form>
+    </details>
 
     {% elif section == 'bank' %}
     <h2 class="text-lg font-semibold mb-4">Datos bancarios</h2>

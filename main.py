@@ -15,7 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from auth import hash_password, verify_password, is_authenticated, require_auth
 from crypto_utils import encrypt_bytes
 from database import (
-    init_db, get_db, get_settings, Settings, Contract, Invoice, STORAGE_PATH,
+    init_db, get_db, get_settings, Settings, Contract, Invoice, Client, STORAGE_PATH,
 )
 from invoice_service import (
     make_preview, build_pdf_context, build_filename, save_invoice_record,
@@ -148,12 +148,15 @@ def new_invoice_form(
     )
     today = date.today()
     cert_loaded = ENCRYPTED_CERT_PATH.exists()
+    clients = db.query(Client).filter(Client.is_archived == False).order_by(Client.name).all()  # noqa: E712
     return templates.TemplateResponse(
         "new_invoice.html",
         {
             "request": request,
             "contracts": contracts,
             "active_contract_id": settings.active_contract_id,
+            "clients": clients,
+            "active_client_id": settings.active_client_id,
             "default_year": today.year,
             "default_month": today.month,
             "cert_loaded": cert_loaded,
@@ -168,6 +171,7 @@ def new_invoice_submit(
     month: int = Form(...),
     days: int = Form(...),
     contract_id: int = Form(...),
+    client_id: Optional[int] = Form(None),
     invoice_date: Optional[str] = Form(None),  # ISO YYYY-MM-DD
     period_start: Optional[str] = Form(None),
     period_end: Optional[str] = Form(None),
@@ -178,6 +182,7 @@ def new_invoice_submit(
 ):
     settings = get_settings(db)
     contracts = db.query(Contract).filter(Contract.is_archived == False).all()  # noqa: E712
+    clients = db.query(Client).filter(Client.is_archived == False).order_by(Client.name).all()  # noqa: E712
 
     def _err(msg: str):
         return templates.TemplateResponse(
@@ -186,6 +191,8 @@ def new_invoice_submit(
                 "request": request,
                 "contracts": contracts,
                 "active_contract_id": settings.active_contract_id,
+                "clients": clients,
+                "active_client_id": client_id or settings.active_client_id,
                 "default_year": year,
                 "default_month": month,
                 "default_days": days,
@@ -208,6 +215,17 @@ def new_invoice_submit(
             return date.fromisoformat(s)
         except ValueError:
             return None
+
+    # Resolve client: use selected or fall back to active
+    resolved_client_id = client_id or settings.active_client_id
+    client = db.query(Client).get(resolved_client_id) if resolved_client_id else None
+    if not client:
+        return _err("Selecciona un cliente antes de generar la factura.")
+
+    # Update active client for next time
+    if settings.active_client_id != resolved_client_id:
+        settings.active_client_id = resolved_client_id
+        db.commit()
 
     try:
         preview = make_preview(
@@ -232,7 +250,7 @@ def new_invoice_submit(
         pdf_filename = target_path.name
 
     # Render PDF
-    ctx = build_pdf_context(settings, contract, preview)
+    ctx = build_pdf_context(settings, contract, preview, client=client)
     unsigned_path = PDF_DIR / f".unsigned_{pdf_filename}"
     render_invoice_pdf(ctx, unsigned_path)
 
@@ -252,7 +270,7 @@ def new_invoice_submit(
         unsigned_path.rename(final_path)
         signed = False
 
-    inv = save_invoice_record(db, settings, contract, preview, pdf_filename, signed)
+    inv = save_invoice_record(db, settings, contract, preview, pdf_filename, signed, client_id=resolved_client_id)
 
     return templates.TemplateResponse(
         "invoice_done.html",
@@ -327,6 +345,7 @@ def admin(
 ):
     settings = get_settings(db)
     contracts = db.query(Contract).order_by(Contract.created_at.desc()).all()
+    clients = db.query(Client).order_by(Client.name).all()
     cert_loaded = ENCRYPTED_CERT_PATH.exists()
     return templates.TemplateResponse(
         "admin.html",
@@ -334,6 +353,7 @@ def admin(
             "request": request,
             "settings": settings,
             "contracts": contracts,
+            "clients": clients,
             "cert_loaded": cert_loaded,
             "section": section,
             "msg": msg,
@@ -366,22 +386,112 @@ def admin_save_issuer(
     return RedirectResponse("/admin?section=issuer&msg=Datos+del+emisor+guardados", status_code=303)
 
 
-@app.post("/admin/client")
-def admin_save_client(
-    client_name: str = Form(...),
-    client_address_line1: str = Form(...),
-    client_address_line2: str = Form(...),
-    client_vat: str = Form(...),
+@app.post("/admin/clients/new")
+def admin_new_client(
+    name: str = Form(...),
+    address_line1: str = Form(""),
+    address_line2: str = Form(""),
+    vat: str = Form(""),
+    set_active: Optional[str] = Form(None),
     _: bool = Depends(require_auth),
     db: Session = Depends(get_db),
 ):
-    s = get_settings(db)
-    s.client_name = client_name
-    s.client_address_line1 = client_address_line1
-    s.client_address_line2 = client_address_line2
-    s.client_vat = client_vat
+    c = Client(name=name, address_line1=address_line1, address_line2=address_line2, vat=vat)
+    db.add(c)
+    db.flush()
+    if set_active:
+        s = get_settings(db)
+        s.active_client_id = c.id
     db.commit()
-    return RedirectResponse("/admin?section=client&msg=Datos+del+cliente+guardados", status_code=303)
+    return RedirectResponse("/admin?section=clients&msg=Cliente+creado", status_code=303)
+
+
+@app.post("/admin/clients/{cid}/update")
+def admin_update_client(
+    cid: int,
+    name: str = Form(...),
+    address_line1: str = Form(""),
+    address_line2: str = Form(""),
+    vat: str = Form(""),
+    _: bool = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    c = db.query(Client).get(cid)
+    if not c:
+        raise HTTPException(404)
+    c.name = name
+    c.address_line1 = address_line1
+    c.address_line2 = address_line2
+    c.vat = vat
+    db.commit()
+    return RedirectResponse("/admin?section=clients&msg=Cliente+actualizado", status_code=303)
+
+
+@app.post("/admin/clients/{cid}/activate")
+def admin_activate_client(
+    cid: int,
+    _: bool = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    c = db.query(Client).get(cid)
+    if not c:
+        raise HTTPException(404)
+    s = get_settings(db)
+    s.active_client_id = cid
+    db.commit()
+    return RedirectResponse("/admin?section=clients&msg=Cliente+activado", status_code=303)
+
+
+@app.post("/admin/clients/{cid}/archive")
+def admin_archive_client(
+    cid: int,
+    _: bool = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    c = db.query(Client).get(cid)
+    if not c:
+        raise HTTPException(404)
+    c.is_archived = True
+    s = get_settings(db)
+    if s.active_client_id == cid:
+        s.active_client_id = None
+    db.commit()
+    return RedirectResponse("/admin?section=clients&msg=Cliente+archivado", status_code=303)
+
+
+@app.post("/admin/clients/{cid}/unarchive")
+def admin_unarchive_client(
+    cid: int,
+    _: bool = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    c = db.query(Client).get(cid)
+    if not c:
+        raise HTTPException(404)
+    c.is_archived = False
+    db.commit()
+    return RedirectResponse("/admin?section=clients&msg=Cliente+restaurado", status_code=303)
+
+
+@app.post("/admin/clients/{cid}/delete")
+def admin_delete_client(
+    cid: int,
+    _: bool = Depends(require_auth),
+    db: Session = Depends(get_db),
+):
+    c = db.query(Client).get(cid)
+    if not c:
+        raise HTTPException(404)
+    # Check no invoices linked
+    linked = db.query(Invoice).filter(Invoice.client_id == cid).count()
+    if linked:
+        return RedirectResponse(f"/admin?section=clients&err=No+se+puede+borrar:+tiene+{linked}+facturas+asociadas", status_code=303)
+    s = get_settings(db)
+    if s.active_client_id == cid:
+        s.active_client_id = None
+    db.delete(c)
+    db.commit()
+    return RedirectResponse("/admin?section=clients&msg=Cliente+eliminado", status_code=303)
 
 
 @app.post("/admin/bank")

@@ -9,7 +9,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 
-from database import Settings, Contract, Invoice, STORAGE_PATH
+from database import Settings, Contract, Invoice, Client, STORAGE_PATH
 
 
 @dataclass
@@ -115,7 +115,7 @@ def make_preview(
     )
 
 
-def build_pdf_context(settings: Settings, contract: Contract, preview: InvoicePreview) -> dict:
+def build_pdf_context(settings: Settings, contract: Contract, preview: InvoicePreview, client: Client = None) -> dict:
     """Build the context dict to feed the PDF template."""
     services_lines = [
         line.strip() for line in contract.services_description.splitlines() if line.strip()
@@ -138,10 +138,10 @@ def build_pdf_context(settings: Settings, contract: Contract, preview: InvoicePr
             "vat": settings.issuer_vat,
         },
         "client": {
-            "name": settings.client_name,
-            "address_line1": settings.client_address_line1,
-            "address_line2": settings.client_address_line2,
-            "vat": settings.client_vat,
+            "name": client.name if client else settings.client_name,
+            "address_line1": client.address_line1 if client else settings.client_address_line1,
+            "address_line2": client.address_line2 if client else settings.client_address_line2,
+            "vat": client.vat if client else settings.client_vat,
         },
         "bank": {
             "name": settings.bank_name,
@@ -164,6 +164,8 @@ def save_invoice_record(
     preview: InvoicePreview,
     pdf_filename: str,
     signed: bool,
+    client_id: int = None,
+    client: Client = None,
 ) -> Invoice:
     """Persist an Invoice row with full snapshot."""
     snapshot = {
@@ -176,10 +178,10 @@ def save_invoice_record(
             "vat": settings.issuer_vat,
         },
         "client": {
-            "name": settings.client_name,
-            "address_line1": settings.client_address_line1,
-            "address_line2": settings.client_address_line2,
-            "vat": settings.client_vat,
+            "name": client.name if client else settings.client_name,
+            "address_line1": client.address_line1 if client else settings.client_address_line1,
+            "address_line2": client.address_line2 if client else settings.client_address_line2,
+            "vat": client.vat if client else settings.client_vat,
         },
         "bank": {
             "name": settings.bank_name,
@@ -209,6 +211,7 @@ def save_invoice_record(
         vat_percentage=settings.vat_percentage,
         pdf_filename=pdf_filename,
         signed=signed,
+        client_id=client_id,
         snapshot=json.dumps(snapshot, ensure_ascii=False),
     )
     db.add(inv)
