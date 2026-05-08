@@ -99,7 +99,7 @@ def logout(request: Request):
 def landing(request: Request):
     if is_authenticated(request):
         return RedirectResponse("/facturas", status_code=303)
-    return templates.TemplateResponse("landing.html", {"request": request})
+    return templates.TemplateResponse("landing_v2.html", {"request": request})
 
 
 # ---------- DASHBOARD ----------

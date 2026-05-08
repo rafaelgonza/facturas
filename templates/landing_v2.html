@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rafael González Manzano</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root,[data-theme="light"]{
+      --bg:#f0ede8;
+      --card:#ffffff;
+      --card2:#1a1a2e;
+      --card3:#e8f4fd;
+      --text:#0f0f0f;
+      --text-inv:#ffffff;
+      --muted:#888;
+      --border:#e0dbd4;
+      --accent:#2563eb;
+      --accent2:#f97316;
+      --tag-bg:#f0ede8;
+      --tag-text:#555;
+    }
+    [data-theme="dark"]{
+      --bg:#0f0f0f;
+      --card:#1c1c1c;
+      --card2:#0a1628;
+      --card3:#0c1f2e;
+      --text:#f0ede8;
+      --text-inv:#f0ede8;
+      --muted:#666;
+      --border:#2a2a2a;
+      --accent:#3b82f6;
+      --accent2:#fb923c;
+      --tag-bg:#2a2a2a;
+      --tag-text:#aaa;
+    }
+
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Inter',sans-serif;
+      min-height:100vh;
+      transition:background .3s,color .3s;
+    }
+
+    /* ── HEADER ── */
+    header{
+      position:fixed;top:0;left:0;right:0;
+      z-index:100;
+      padding:1.25rem 2.5rem;
+      display:flex;justify-content:space-between;align-items:center;
+      transition:background .3s,border-color .3s;
+    }
+    header.scrolled{
+      background:rgba(240,237,232,0.85);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+    }
+    [data-theme="dark"] header.scrolled{background:rgba(15,15,15,0.85)}
+
+    .logo{
+      font-size:.75rem;font-weight:700;
+      letter-spacing:.2em;text-transform:uppercase;
+      color:var(--accent);
+    }
+    .controls{display:flex;align-items:center;gap:.6rem}
+    .ctrl-group{
+      display:flex;border:1px solid var(--border);
+      border-radius:6px;overflow:hidden;
+      transition:border-color .3s;
+    }
+    .ctrl-btn{
+      background:transparent;border:none;
+      color:var(--muted);
+      font-family:'Inter',sans-serif;
+      font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+      padding:.3rem .65rem;cursor:pointer;
+      transition:color .2s,background .2s;
+      line-height:1;
+    }
+    .ctrl-btn+.ctrl-btn{border-left:1px solid var(--border)}
+    .ctrl-btn.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+    .ctrl-btn:hover:not(.active){color:var(--text)}
+
+    /* ── MAIN GRID ── */
+    main{
+      max-width:1200px;margin:0 auto;
+      padding:7rem 2.5rem 4rem;
+    }
+
+    /* ── HERO STRIP ── */
+    .hero{
+      margin-bottom:2.5rem;
+    }
+    .hero-label{
+      display:inline-flex;align-items:center;gap:.6rem;
+      font-size:.7rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;
+      color:var(--accent);margin-bottom:1.5rem;
+    }
+    .hero-label::before{
+      content:'';display:block;
+      width:.5rem;height:.5rem;
+      background:var(--accent);border-radius:50%;
+      animation:pulse 2s infinite;
+    }
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+    h1{
+      font-size:clamp(3rem,9vw,9rem);
+      font-weight:900;line-height:.9;
+      letter-spacing:-.04em;
+      margin-bottom:2rem;
+    }
+    h1 span.outline{
+      -webkit-text-stroke:2px var(--text);
+      color:transparent;
+    }
+    [data-theme="dark"] h1 span.outline{-webkit-text-stroke-color:var(--text)}
+
+    /* ── BENTO GRID ── */
+    .bento{
+      display:grid;
+      grid-template-columns:repeat(12,1fr);
+      grid-auto-rows:minmax(140px,auto);
+      gap:1rem;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:16px;
+      padding:1.75rem;
+      position:relative;overflow:hidden;
+      transition:background .3s,transform .2s;
+    }
+    .card:hover{transform:translateY(-2px)}
+
+    .card-label{
+      font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+      color:var(--muted);margin-bottom:1rem;
+    }
+    .card-title{
+      font-size:1.35rem;font-weight:700;line-height:1.2;
+      margin-bottom:.6rem;
+    }
+    .card-body{
+      font-size:.82rem;color:var(--muted);line-height:1.6;font-weight:400;
+    }
+
+    /* Card variants */
+    .card-dark{
+      background:var(--card2);
+      color:var(--text-inv);
+    }
+    .card-dark .card-label,.card-dark .card-body{color:rgba(255,255,255,.45)}
+    .card-dark .card-title{color:var(--text-inv)}
+
+    .card-accent{background:var(--accent);color:#fff}
+    .card-accent .card-label,.card-accent .card-body{color:rgba(255,255,255,.7)}
+    .card-accent .card-title{color:#fff}
+
+    .card-light{background:var(--card3)}
+
+    /* Grid layout */
+    .col-4{grid-column:span 4}
+    .col-5{grid-column:span 5}
+    .col-6{grid-column:span 6}
+    .col-7{grid-column:span 7}
+    .col-8{grid-column:span 8}
+    .col-12{grid-column:span 12}
+    .row-2{grid-row:span 2}
+
+    /* ── SKILLS TAGS ── */
+    .tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem}
+    .tag{
+      font-size:.65rem;font-weight:600;
+      padding:.3rem .7rem;border-radius:99px;
+      background:var(--tag-bg);color:var(--tag-text);
+      border:1px solid var(--border);
+      transition:background .3s,color .3s,border-color .3s;
+    }
+    .card-dark .tag{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.1)}
+    .card-accent .tag{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)}
+
+    /* ── BIG NUMBER ── */
+    .big-num{
+      font-size:5rem;font-weight:900;
+      line-height:1;color:var(--accent);
+      letter-spacing:-.04em;
+    }
+
+    /* ── AVAILABILITY DOT ── */
+    .avail{display:flex;align-items:center;gap:.6rem;margin-top:auto}
+    .dot-green{
+      width:.6rem;height:.6rem;border-radius:50%;
+      background:#22c55e;
+      box-shadow:0 0 0 3px rgba(34,197,94,.2);
+      animation:pulse 2s infinite;
+      flex-shrink:0;
+    }
+    .avail-text{font-size:.75rem;font-weight:500;color:#22c55e}
+
+    /* ── CODE BLOCK ── */
+    .code-block{
+      font-family:'Courier New',monospace;
+      font-size:.72rem;line-height:1.7;
+      color:rgba(255,255,255,.7);
+      margin-top:.75rem;
+    }
+    .code-block .kw{color:#93c5fd}
+    .code-block .str{color:#86efac}
+    .code-block .fn{color:#fbbf24}
+    .code-block .cm{color:rgba(255,255,255,.3)}
+
+    /* ── CONTACT CARD ── */
+    .contact-form{margin-top:1rem;display:flex;flex-direction:column;gap:.85rem}
+    .cf-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+    .cf-input{
+      width:100%;background:var(--tag-bg);border:1px solid var(--border);
+      border-radius:8px;padding:.6rem .85rem;
+      font-family:'Inter',sans-serif;font-size:.8rem;
+      color:var(--text);outline:none;
+      transition:border-color .2s,background .3s;
+    }
+    .cf-input:focus{border-color:var(--accent)}
+    .cf-input::placeholder{color:var(--muted)}
+    textarea.cf-input{resize:none}
+    .cf-btn{
+      background:var(--accent);color:#fff;border:none;
+      border-radius:8px;padding:.7rem 1.5rem;
+      font-family:'Inter',sans-serif;font-size:.75rem;font-weight:700;
+      letter-spacing:.05em;text-transform:uppercase;
+      cursor:pointer;align-self:flex-start;
+      transition:opacity .2s,transform .1s;
+    }
+    .cf-btn:hover{opacity:.85;transform:translateY(-1px)}
+
+    /* ── FOOTER ── */
+    footer{
+      max-width:1200px;margin:0 auto;
+      padding:1.5rem 2.5rem;
+      display:flex;justify-content:space-between;align-items:center;
+      border-top:1px solid var(--border);
+      font-size:.65rem;color:var(--muted);font-weight:500;letter-spacing:.05em;
+      transition:border-color .3s;
+    }
+    #secret{cursor:default;user-select:none;transition:color .2s}
+    #secret.active{color:var(--accent)}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px){
+      .col-4,.col-5,.col-6,.col-7,.col-8{grid-column:span 12}
+      .row-2{grid-row:span 1}
+      main{padding:6rem 1.25rem 3rem}
+      h1{font-size:clamp(2.8rem,13vw,5rem)}
+      .cf-row{grid-template-columns:1fr}
+    }
+    @media(max-width:480px){
+      header{padding:1rem 1.25rem}
+    }
+  </style>
+</head>
+<body>
+
+<header id="hdr">
+  <span class="logo">RGM</span>
+  <div class="controls">
+    <div class="ctrl-group">
+      <button class="ctrl-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+      <button class="ctrl-btn" id="btn-es" onclick="setLang('es')">ES</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="ctrl-btn" id="theme-btn" onclick="toggleTheme()">☀</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-label" data-en="Available for projects" data-es="Disponible para proyectos">Available for projects</div>
+    <h1>
+      Rafael<br>
+      <span class="outline">González</span><br>
+      Manzano
+    </h1>
+  </div>
+
+  <!-- Bento Grid -->
+  <div class="bento">
+
+    <!-- Role card -->
+    <div class="card card-dark col-5 row-2">
+      <div class="card-label" data-en="Role" data-es="Rol">Role</div>
+      <div class="card-title" data-en="Software Engineer" data-es="Ingeniero Informático">Software Engineer</div>
+      <div class="code-block">
+        <div><span class="kw">const</span> rafael = {</div>
+        <div>&nbsp;&nbsp;<span class="str">role</span>: <span class="fn">"Software Engineer"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="str">stack</span>: [<span class="fn">"Python"</span>, <span class="fn">"FastAPI"</span>],</div>
+        <div>&nbsp;&nbsp;<span class="str">focus</span>: <span class="fn">"Enterprise Systems"</span>,</div>
+        <div>&nbsp;&nbsp;<span class="str">location</span>: <span class="fn">"Seville, Spain"</span></div>
+        <div>};</div>
+        <div class="cm">// open to new challenges</div>
+      </div>
+    </div>
+
+    <!-- Years exp -->
+    <div class="card card-accent col-3">
+      <div class="card-label" data-en="Experience" data-es="Experiencia">Experience</div>
+      <div class="big-num" style="color:#fff">15+</div>
+      <div class="card-body" style="color:rgba(255,255,255,.7)" data-en="years building enterprise software" data-es="años desarrollando software empresarial">years building enterprise software</div>
+    </div>
+
+    <!-- Availability -->
+    <div class="card col-4">
+      <div class="card-label" data-en="Status" data-es="Estado">Status</div>
+      <div class="card-title" data-en="Open to work" data-es="Disponible">Open to work</div>
+      <div class="card-body" data-en="Available for freelance projects and consulting." data-es="Disponible para proyectos freelance y consultoría.">Available for freelance projects and consulting.</div>
+      <div class="avail" style="margin-top:1rem">
+        <div class="dot-green"></div>
+        <span class="avail-text" data-en="Currently available" data-es="Actualmente disponible">Currently available</span>
+      </div>
+    </div>
+
+    <!-- Backend -->
+    <div class="card col-4">
+      <div class="card-label">Backend</div>
+      <div class="card-title" data-en="Systems Development" data-es="Desarrollo de Sistemas">Systems Development</div>
+      <div class="tags">
+        <span class="tag">Python</span>
+        <span class="tag">FastAPI</span>
+        <span class="tag">REST APIs</span>
+        <span class="tag">SQL</span>
+        <span class="tag">SQLAlchemy</span>
+      </div>
+    </div>
+
+    <!-- Infra -->
+    <div class="card col-4">
+      <div class="card-label" data-en="Infrastructure" data-es="Infraestructura">Infrastructure</div>
+      <div class="card-title">Cloud & DevOps</div>
+      <div class="tags">
+        <span class="tag">Docker</span>
+        <span class="tag">Railway</span>
+        <span class="tag">CI/CD</span>
+        <span class="tag">Linux</span>
+        <span class="tag">Git</span>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="card card-light col-4">
+      <div class="card-label" data-en="Digital Signature" data-es="Firma Digital">Digital Signature</div>
+      <div class="card-title" data-en="Security & PKI" data-es="Seguridad & PKI">Security & PKI</div>
+      <div class="tags">
+        <span class="tag">PAdES</span>
+        <span class="tag" data-en="Certificates" data-es="Certificados">Certificates</span>
+        <span class="tag" data-en="Cryptography" data-es="Criptografía">Cryptography</span>
+      </div>
+    </div>
+
+    <!-- Contact form -->
+    <div class="card col-8" id="contact">
+      <div class="card-label" data-en="Contact" data-es="Contacto">Contact</div>
+      <div class="card-title" data-en="Let's build something together" data-es="Construyamos algo juntos">Let's build something together</div>
+      <form class="contact-form" id="contactForm">
+        <div class="cf-row">
+          <input class="cf-input" type="text" id="fname" data-ph-en="Your name" data-ph-es="Tu nombre" placeholder="Your name" required/>
+          <input class="cf-input" type="email" id="femail" data-ph-en="your@email.com" data-ph-es="tu@email.com" placeholder="your@email.com" required/>
+        </div>
+        <textarea class="cf-input" id="fmsg" rows="3" data-ph-en="Tell me about your project..." data-ph-es="Cuéntame tu proyecto..." placeholder="Tell me about your project..." required></textarea>
+        <button type="submit" class="cf-btn" data-en="Send message" data-es="Enviar mensaje">Send message</button>
+      </form>
+    </div>
+
+    <!-- Location -->
+    <div class="card card-dark col-4">
+      <div class="card-label" data-en="Location" data-es="Ubicación">Location</div>
+      <div class="card-title">Seville,<br>Spain 🇪🇸</div>
+      <div class="card-body" style="margin-top:.5rem" data-en="Remote-first. Available worldwide." data-es="Trabajo remoto. Disponible globalmente.">Remote-first. Available worldwide.</div>
+    </div>
+
+  </div><!-- /bento -->
+</main>
+
+<footer>
+  <span>Rafael González Manzano · Software Engineer</span>
+  <span>© <span id="secret">2026</span></span>
+</footer>
+
+<script>
+  // Scroll header
+  window.addEventListener('scroll',()=>{
+    document.getElementById('hdr').classList.toggle('scrolled',scrollY>30);
+  });
+
+  // Language
+  function setLang(l){
+    localStorage.setItem('lang',l);
+    document.documentElement.lang=l;
+    document.getElementById('btn-en').classList.toggle('active',l==='en');
+    document.getElementById('btn-es').classList.toggle('active',l==='es');
+    document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[l]);
+    document.querySelectorAll('[data-ph-en]').forEach(el=>{
+      el.placeholder=l==='en'?el.dataset.phEn:el.dataset.phEs;
+    });
+  }
+
+  // Theme
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    document.getElementById('theme-btn').textContent=t==='dark'?'☀':'☾';
+  }
+  function toggleTheme(){
+    const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+    localStorage.setItem('theme',n);applyTheme(n);
+  }
+
+  // Init
+  applyTheme(localStorage.getItem('theme')||'light');
+  setLang(localStorage.getItem('lang')||'en');
+
+  // Contact
+  document.getElementById('contactForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    const l=localStorage.getItem('lang')||'en';
+    const name=document.getElementById('fname').value;
+    const email=document.getElementById('femail').value;
+    const msg=document.getElementById('fmsg').value;
+    const from=l==='es'?'De':'From';
+    const subj=encodeURIComponent((l==='es'?'Contacto web':'Web contact')+' — '+name);
+    const body=encodeURIComponent(from+': '+name+'\nEmail: '+email+'\n\n'+msg);
+    window.location.href='mailto:rafaelgonza@gmail.com?subject='+subj+'&body='+body;
+  });
+
+  // Easter egg
+  let clicks=0,timer;
+  document.getElementById('secret').addEventListener('click',function(){
+    clicks++;this.classList.add('active');
+    clearTimeout(timer);
+    timer=setTimeout(()=>{clicks=0;this.classList.remove('active')},800);
+    if(clicks>=3)window.location.href='/login';
+  });
+</script>
+</body>
+</html>
